@@ -15,9 +15,9 @@ impl Stick {
 	pub fn ignite(port: u16) -> Result<Self, StickError> {
 		let listener = TcpListener::bind(format!("127.0.0.1:{}", port))?;
 
-		Self {
+		Ok(Self {
 			listener,
 			thread_pool: ThreadPool::new(),
-		}
+		})
 	}
 }

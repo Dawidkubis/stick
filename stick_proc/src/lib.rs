@@ -1,7 +1,5 @@
-#[cfg(test)]
-mod tests {
-	#[test]
-	fn it_works() {
-		assert_eq!(2 + 2, 4);
-	}
-}
+use proc_macro::TokenStream;
+use quote::quote;
+
+#[proc_macro_attribute]
+pub fn get(stream: TokenStream)
