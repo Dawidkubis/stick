@@ -1,13 +1,23 @@
 use std::net::*;
 
-mod threadpool;
 mod errors;
+mod threadpool;
 
-#[cfg(test)]
-mod tests {
-	#[test]
-	fn it_works() {
-		assert_eq!(2 + 2, 4);
-	}
+use errors::StickError;
+use threadpool::ThreadPool;
+
+struct Stick {
+	listener: TcpListener,
+	thread_pool: ThreadPool,
 }
 
+impl Stick {
+	pub fn ignite(port: u16) -> Result<Self, StickError> {
+		let listener = TcpListener::bind(format!("127.0.0.1:{}", port))?;
+
+		Self {
+			listener,
+			thread_pool: ThreadPool::new(),
+		}
+	}
+}
