@@ -1,8 +1,3 @@
-use std::net::*;
-
-mod threadpool;
-mod errors;
-
 #[cfg(test)]
 mod tests {
 	#[test]
@@ -10,4 +5,3 @@ mod tests {
 		assert_eq!(2 + 2, 4);
 	}
 }
-
