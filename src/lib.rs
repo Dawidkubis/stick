@@ -20,4 +20,10 @@ impl Stick {
 			thread_pool: ThreadPool::new(),
 		})
 	}
+
+	pub fn throw(self) {
+		loop {
+			
+		}
+	}
 }
