@@ -2,12 +2,14 @@ use std::net::*;
 
 mod errors;
 mod threadpool;
+mod route;
 
 use errors::StickError;
 use threadpool::ThreadPool;
 
 struct Stick {
 	listener: TcpListener,
+	routes: Vec<()>,
 	thread_pool: ThreadPool,
 }
 
@@ -21,9 +23,16 @@ impl Stick {
 		})
 	}
 
+	pub fn mount(&mut self) {
+
+	}
+
 	pub fn throw(self) {
-		loop {
+		self.listener.incoming()
+			.map(self.handle_connection)
+	}
+
+	fn handle_connection(&self, stream: TcpStream) {
 			
-		}
 	}
 }
