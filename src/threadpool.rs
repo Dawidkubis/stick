@@ -1,37 +1,70 @@
 use std::marker::Send;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
+
+use crate::StickError;
+
+type Job = Box<dyn FnOnce() + Send + 'static>;
 
 struct Worker(thread::JoinHandle<()>);
 
 impl Worker {
-	fn new(receiver: mpsc::Receiver) -> Self {
-		Self(thread::spawn(|| {}))
+	fn new(receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
+		let handle = thread::spawn(move || loop {
+			let job = receiver.lock().unwrap().recv().expect("recverror");
+
+			job();
+		});
+
+		Self(handle)
 	}
 }
 
-pub struct ThreadPool(Vec<Worker>);
+pub struct ThreadPool {
+	workers: Vec<Worker>,
+	sender: mpsc::Sender<Job>,
+}
 
 impl ThreadPool {
 	pub fn new(capacity: usize) -> Result<Self, StickError> {
-
 		if capacity < 0 {
 			return Err(StickError::ThreadPoolError);
 		}
 
 		let (sender, receiver) = mpsc::channel();
 
-		let workers: Vec<Worker> = (0..capacity).iter()
-			.map(Worker::new())
+		let receiver = Arc::new(Mutex::new(receiver));
+
+		let workers: Vec<Worker> = (0..capacity)
+			.map(|x| Worker::new(Arc::clone(&receiver)))
 			.collect();
 
-		Ok(Self(workers))
+		Ok(Self { workers, sender })
 	}
 
-	pub fn spawn<T>(&mut self, fun: T)
+	pub fn execute<T>(&mut self, fun: T)
 	where
-		T: Send + Fn() -> () + 'static,
+		T: Send + FnOnce() + 'static,
 	{
-		self.0.push(thread::spawn(fun));
+		let job = Box::new(fun);
+
+		self.sender.send(job).unwrap();
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	#[test]
+	fn hello() {
+		use crate::threadpool::ThreadPool;
+		use std::thread;
+
+		let mut threadpool = ThreadPool::new(4).unwrap();
+		for i in 0..10 {
+			threadpool.execute(|| {
+				let t = thread::current();
+				println!("hello from thread: {:?}", t.id())
+			});
+		}
 	}
 }

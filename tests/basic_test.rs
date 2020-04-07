@@ -1,14 +1,14 @@
-#[test]
-fn hello_world() {
-	use std::thread;
-	use stick::Strick;
+//#[test]
+//fn hello_world() {
+//use std::thread;
+//use stick::Strick;
 
-	#[get("/")]
-	fn index() -> String {
-		"hello world".owned()
-	}
+//#[get("/")]
+//fn index() -> String {
+//"hello world".into()
+//}
 
-	thread::spawn(|| {
-		Stick::ignite("/").mount(index).launch();
-	});
-}
+//thread::spawn(|| {
+//Stick::ignite("/").mount(index).launch();
+//});
+//}

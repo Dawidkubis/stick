@@ -6,4 +6,6 @@ pub enum StickError {
 	PortError(#[from] std::io::Error),
 	#[error("unable to create threapool, invalid capacity")]
 	ThreadPoolError,
+	#[error("unable to send job")]
+	SenderError,
 }
