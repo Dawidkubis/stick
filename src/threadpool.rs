@@ -11,7 +11,12 @@ struct Worker(thread::JoinHandle<()>);
 impl Worker {
 	fn new(receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
 		let handle = thread::spawn(move || loop {
-			let job = receiver.lock().unwrap().recv().expect("recverror");
+			let job = loop {
+				match receiver.lock().unwrap().recv() {
+					Ok(s) => break s,
+					Err(e) => (),
+				};
+			};
 
 			job();
 		});
@@ -52,19 +57,16 @@ impl ThreadPool {
 	}
 }
 
-#[cfg(test)]
-mod tests {
-	#[test]
-	fn hello() {
-		use crate::threadpool::ThreadPool;
-		use std::thread;
+#[test]
+fn hello() {
+	use crate::threadpool::ThreadPool;
+	use std::thread;
 
-		let mut threadpool = ThreadPool::new(4).unwrap();
-		for i in 0..10 {
-			threadpool.execute(|| {
-				let t = thread::current();
-				println!("hello from thread: {:?}", t.id())
-			});
-		}
+	let mut threadpool = ThreadPool::new(4).unwrap();
+	for i in 0..10 {
+		threadpool.execute(|| {
+			let t = thread::current();
+			println!("hello from thread: {:?}", t.id())
+		});
 	}
 }
