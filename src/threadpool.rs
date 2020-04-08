@@ -4,12 +4,17 @@ use std::thread;
 
 use crate::StickError;
 
-type Job = Box<dyn FnOnce() + Send + 'static>;
+type J = Box<dyn FnOnce() + Send + 'static>;
 
-struct Worker(thread::JoinHandle<()>);
+enum Msg {
+	Terminate,
+	Job(J)
+}
+
+struct Worker(Option<thread::JoinHandle<()>>);
 
 impl Worker {
-	fn new(receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
+	fn new(receiver: Arc<Mutex<mpsc::Receiver<Msg>>>) -> Self {
 		let handle = thread::spawn(move || loop {
 			let job = loop {
 				match receiver.lock().unwrap().recv() {
@@ -18,24 +23,25 @@ impl Worker {
 				};
 			};
 
+			let job = match job {
+				Msg::Job(j) => j,
+				Msg::Terminate => break,
+			};
+
 			job();
 		});
 
-		Self(handle)
+		Self(Some(handle))
 	}
 }
 
 pub struct ThreadPool {
 	workers: Vec<Worker>,
-	sender: mpsc::Sender<Job>,
+	sender: mpsc::Sender<Msg>,
 }
 
 impl ThreadPool {
-	pub fn new(capacity: usize) -> Result<Self, StickError> {
-		if capacity < 0 {
-			return Err(StickError::ThreadPoolError);
-		}
-
+	pub fn new(capacity: usize) -> Self {
 		let (sender, receiver) = mpsc::channel();
 
 		let receiver = Arc::new(Mutex::new(receiver));
@@ -44,7 +50,10 @@ impl ThreadPool {
 			.map(|x| Worker::new(Arc::clone(&receiver)))
 			.collect();
 
-		Ok(Self { workers, sender })
+		Self {
+			workers,
+			sender,
+		}
 	}
 
 	pub fn execute<T>(&mut self, fun: T)
@@ -53,8 +62,17 @@ impl ThreadPool {
 	{
 		let job = Box::new(fun);
 
-		self.sender.send(job).unwrap();
+		self.sender.send(Msg::Job(job)).unwrap();
 	}
+}
+
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+    	for x in self.workers.iter_mut() {
+    		self.sender.send(Msg::Terminate).unwrap();
+    		if let Some(handle) = x.0.take(){ handle.join().unwrap() };
+ 		}			
+    }
 }
 
 #[test]
@@ -62,11 +80,17 @@ fn hello() {
 	use crate::threadpool::ThreadPool;
 	use std::thread;
 
-	let mut threadpool = ThreadPool::new(4).unwrap();
+	let (sender, receiver) = mpsc::channel();
+	let mut stuff: Vec<usize> = vec![];
+
+	let mut threadpool = ThreadPool::new(4);
 	for i in 0..10 {
-		threadpool.execute(|| {
-			let t = thread::current();
-			println!("hello from thread: {:?}", t.id())
+		let s = sender.clone();
+		threadpool.execute(move || {
+			s.send(1).unwrap();
 		});
+		stuff.push(receiver.recv().unwrap())
 	}
+
+	assert_eq!(stuff.iter().sum::<usize>(), 10);
 }

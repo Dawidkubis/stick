@@ -18,7 +18,7 @@ impl Stick {
 
 		Ok(Self {
 			listener,
-			thread_pool: ThreadPool::new(8)?,
+			thread_pool: ThreadPool::new(8),
 		})
 	}
 
