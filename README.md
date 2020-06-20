@@ -1,3 +1,6 @@
+I won't be working on this project anymore since I've found
+other web frameworks that serve my purposes well.
+
 # stick
 create fast and simple http servers
 
