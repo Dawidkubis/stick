@@ -1,33 +1,20 @@
-use std::net::*;
+use std::net::TcpListener;
 
 mod errors;
-mod threadpool;
-//mod route;
 
 use errors::StickError;
-use threadpool::ThreadPool;
 
+/// representation of a http server
 struct Stick {
 	listener: TcpListener,
-	thread_pool: ThreadPool,
 }
 
 impl Stick {
-	pub fn ignite(port: u16) -> Result<Self, StickError> {
-		let listener = TcpListener::bind(format!("127.0.0.1:{}", port))?;
+	pub fn ignite(bind: &str) -> Result<Self, StickError> {
+		let listener = TcpListener::bind(bind)?;
 
 		Ok(Self {
 			listener,
-			thread_pool: ThreadPool::new(8),
 		})
 	}
-
-	pub fn mount(&mut self) {}
-
-	pub fn throw(self) {
-		//self.listener.incoming()
-		//.map(self.handle_connection)
-	}
-
-	fn handle_connection(&self, stream: TcpStream) {}
 }

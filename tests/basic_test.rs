@@ -1,14 +1,6 @@
-//#[test]
-//fn hello_world() {
-//use std::thread;
-//use stick::Strick;
+#[test]
+fn hello_world() {
+	use stick::Strick;
 
-//#[get("/")]
-//fn index() -> String {
-//"hello world".into()
-//}
-
-//thread::spawn(|| {
-//Stick::ignite("/").mount(index).launch();
-//});
-//}
+	Stick::ignite("127.0.0.1:8000").unwrap();
+}
