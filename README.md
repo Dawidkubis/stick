@@ -1,5 +1,5 @@
 # stick
-create fast and simple http servers
+create fast and correct http servers
 
 ## the orgin story
 I use [rocket](https://rocket.rs) and I fairly like it, however, 
